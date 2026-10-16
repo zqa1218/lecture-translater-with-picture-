@@ -17,6 +17,22 @@
 
 ---
 
+## 下载（最新发布 v2.2）
+
+Windows 版安装包与免安装版都在 [Releases](https://github.com/zqa1218/lecture-translater-with-picture-/releases/latest) 页面：
+
+| 文件 | 说明 |
+| --- | --- |
+| `PPT-Lecture-Translator-v2.2-Setup.exe` | **推荐**。一键安装（中文向导），免管理员权限，装到用户目录，自带卸载程序与开始菜单 / 桌面快捷方式 |
+| `PPT-Lecture-Translator-v2.2-Portable.exe` | 便携版，双击即用，无需安装，可放 U 盘 |
+
+> 两个都是约 220 MB 的单文件 exe，内置 Python、Qt、OCR 模型与依赖；双击后会先解包到 `%TEMP%`，首次启动约 5–10 秒。
+> 程序未做代码签名，Windows SmartScreen 提示「未知发布者」时点「更多信息」→「仍要运行」。
+
+> v2.2 相对 v2.0 的重点：课件图片里的英文（插图、流程图、坐标轴、图注）也能翻译，且图片尺寸、位置、裁剪、旋转保持不变。
+
+---
+
 ## 一、理想工作流（先定流程，再落代码）
 
 整条流程分成**三条轨**，前两条可独立使用，第三条依赖前两条的产物。
@@ -166,6 +182,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 
 **产物**：`work\dist\ppt-pdf-translator.exe`（约 223 MB，GUI 子系统）。可直接改名，例如 `ppt-课件学习助手_v2.0.exe`。
 onefile 每次启动都要把自己解包到 `%TEMP%`（首次约 5–10 秒），介意启动速度就用 `-Onedir`。
+
+### 做成一键安装包（Inno Setup 6）
+
+```powershell
+# 1) 先构建单文件 exe（见上）
+# 2) 编译安装包脚本
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .\installer\setup.iss
+```
+
+- 脚本在 `installer\setup.iss`，产物默认落在 `installer\dist\PPT-Lecture-Translator-v2.2-Setup.exe`。
+- 通过 `#ifndef` 暴露了三个可覆盖的宏，方便命令行改路径与版本号：
+  `ISCC.exe /DPayload=<单文件exe> /DOutDir=<输出目录> /DAppVersion=2.3 .\installer\setup.iss`
+- `installer\ChineseSimplified.isl` 是 Inno 的简体中文语言文件；存在时安装向导走中文，删掉也能编译（只剩英文界面）。
+- 安装包特性：`PrivilegesRequired=lowest`（免管理员，装到 `%LOCALAPPDATA%\Programs`）、开始菜单 + 可选桌面快捷方式、标准卸载程序、
+  设置存在 `%APPDATA%`，覆盖升级不会丢 API Key。
 
 构建脚本里有三处「不这么写就炸」的硬约束，动它之前先读脚本里的注释：
 
